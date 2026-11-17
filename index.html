@@ -1,1095 +1,1050 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>金融商品・金利比較シミュレーター（国債・メガバンク・地銀）</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Noto Sans JP & Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['"Inter"', '"Noto Sans JP"', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#f0f5ff',
-                            100: '#e0ebff',
-                            500: '#2563eb',
-                            600: '#1d4ed8',
-                            700: '#1e40af',
-                            900: '#1e3a8a',
-                        }
-                    }
-                }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>金融商品・金利比較シミュレーター（国債・メガバンク・地銀）</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Inter"', '"Noto Sans JP"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f5ff',
+              100: '#e0ebff',
+              500: '#2563eb',
+              600: '#1d4ed8',
+              700: '#1e40af',
+              900: '#1e3a8a',
             }
+          }
         }
-    </script>
-    <style>
-        /* カスタムスクロールバーと入力フィールド微調整 */
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type="number"] {
-            -moz-appearance: textfield;
-        }
-        .tab-active {
-            background-color: #1d4ed8;
-            color: #ffffff;
-            box-shadow: 0 4px 6px -1px rgba(29, 78, 216, 0.25);
-        }
-    </style>
+      }
+    }
+  </script>
+  <style>
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    .tab-active {
+      background-color: #1e40af;
+      color: #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 999px;
+      background: #334155;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fbbf24;
+      cursor: pointer;
+      border: 2px solid #0f172a;
+      box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.4);
+    }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased selection:bg-brand-100 selection:text-brand-900">
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
 
-    <!-- 通知トースト（alert()の代替） -->
-    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
-
-    <!-- ヘッダー -->
-    <header class="bg-gradient-to-r from-slate-900 via-brand-900 to-slate-900 text-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <div class="flex items-center gap-2 text-brand-200 text-xs sm:text-sm font-medium mb-1">
-                        <span class="bg-brand-700/80 border border-brand-500/40 px-2.5 py-0.5 rounded-full text-white">2026年11月基準金利対応</span>
-                        <span>個人向け国債・メガバンク・茨城地銀 徹底比較</span>
-                    </div>
-                    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2.5">
-                        <i data-lucide="landmark" class="w-7 h-7 text-brand-300 shrink-0"></i>
-                        <span>金融商品・金利比較シミュレーター</span>
-                    </h1>
-                </div>
-                <div class="flex flex-wrap items-center gap-2">
-                    <button onclick="openAddModal()" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm px-4 py-2.5 rounded-xl shadow transition active:scale-95">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                        <span>商品・キャンペーンを追加</span>
-                    </button>
-                    <button onclick="resetDefaults()" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white font-medium text-sm px-3.5 py-2.5 rounded-xl border border-white/15 transition active:scale-95" title="初期データに戻す">
-                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                        <span class="hidden sm:inline">初期値リセット</span>
-                    </button>
-                </div>
-            </div>
+  <!-- ヘッダー -->
+  <header class="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 text-blue-300 text-xs font-semibold tracking-wider uppercase mb-1">
+          <span class="bg-blue-800/70 border border-blue-600/50 px-2.5 py-0.5 rounded-full">2026年11月基準金利対応</span>
+          <span>個人向け国債・メガバンク・茨城地銀 徹底比較</span>
         </div>
-    </header>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2.5">
+          <i data-lucide="landmark" class="w-7 h-7 text-blue-400"></i>
+          金融商品・金利比較シミュレーター
+        </h1>
+      </div>
+      <div class="flex flex-wrap items-center gap-2.5">
+        <button onclick="openAddModal()" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded-lg shadow transition cursor-pointer">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          商品・キャンペーンを追加
+        </button>
+        <button onclick="resetDefaults()" class="inline-flex items-center gap-1.5 bg-slate-700/80 hover:bg-slate-600 text-slate-200 text-sm font-medium px-3.5 py-2 rounded-lg border border-slate-600 transition cursor-pointer">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+          初期値リセット
+        </button>
+      </div>
+    </div>
+  </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
 
-        <!-- 常時表示：高橋洋一式マクロ経済＆金利分析ダッシュボード -->
-        <section class="bg-slate-900 text-white rounded-2xl shadow-xl border border-slate-700/80 overflow-hidden">
-            <!-- 上部バー：フィッシャー方程式＆リアルタイム判定ステータス -->
-            <div class="bg-gradient-to-r from-brand-900 via-slate-900 to-indigo-950 px-5 sm:px-6 py-4 border-b border-slate-700/80 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                <div class="flex items-center gap-2.5">
-                    <span class="p-2 rounded-xl bg-brand-500/20 border border-brand-400/30 text-brand-300 shrink-0">
-                        <i data-lucide="compass" class="w-5 h-5"></i>
-                    </span>
-                    <div>
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <h2 class="text-base sm:text-lg font-bold tracking-tight text-white">マクロ経済・金利予測ダッシュボード（高橋洋一式分析視点）</h2>
-                            <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30">常時連動データ</span>
-                        </div>
-                        <p class="text-xs text-slate-300 mt-0.5">
-                            基本公式：<strong class="text-brand-300">名目金利（長期金利） ＝ 実質金利 ＋ 期待インフレ率</strong>（フィッシャー方程式）に基づく商品優位性判定
-                        </p>
-                    </div>
-                </div>
-                <div id="macro-verdict-badge" class="bg-emerald-950/90 border border-emerald-500/40 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold text-emerald-300 flex items-center gap-2 shrink-0">
-                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
-                    <span id="macro-verdict-text">判定中...</span>
-                </div>
+    <!-- マクロ経済・金利予測ダッシュボード（高橋洋一式分析視点・常時表示） -->
+    <section class="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 text-white rounded-2xl shadow-lg border border-slate-800 overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <div class="bg-amber-500/20 border border-amber-400/40 p-2 rounded-lg text-amber-400">
+            <i data-lucide="compass" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base sm:text-lg font-bold tracking-tight text-white">マクロ経済・金利予測ダッシュボード（高橋洋一式分析視点）</h2>
+              <span class="bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[11px] font-semibold px-2 py-0.5 rounded">常時連動データ</span>
             </div>
+            <p class="text-xs text-slate-400 mt-0.5">基本公式：名目金利（長期金利） ＝ 実質金利 ＋ 期待インフレ率（フィッシャー方程式）に基づく商品優位性判定</p>
+          </div>
+        </div>
+        <div id="macroVerdictBadge" class="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 px-3.5 py-1.5 rounded-xl text-xs font-bold self-start sm:self-auto">
+          <i data-lucide="trending-up" class="w-4 h-4"></i>
+          <span id="macroVerdictText">判定中...</span>
+        </div>
+      </div>
 
-            <div class="p-5 sm:p-6 space-y-6">
-                <!-- 4つの主要マクロ経済指標カード（コンスタント表示） -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                    <div class="bg-slate-800/80 border border-slate-700/70 rounded-xl p-4">
-                        <div class="flex items-center justify-between text-xs text-slate-400 font-medium">
-                            <span>日銀 政策金利</span>
-                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-300">無担保コール</span>
-                        </div>
-                        <div class="mt-2 flex items-baseline gap-1.5">
-                            <span id="kpi-boj-rate" class="text-2xl sm:text-3xl font-bold text-white tracking-tight">1.00</span>
-                            <span class="text-sm font-bold text-slate-400">%</span>
-                        </div>
-                        <p class="text-[11px] text-slate-400 mt-1.5">追加利上げシナリオ連動基準</p>
-                    </div>
-
-                    <div class="bg-slate-800/80 border border-slate-700/70 rounded-xl p-4">
-                        <div class="flex items-center justify-between text-xs text-slate-400 font-medium">
-                            <span>消費者物価指数 (CPI)</span>
-                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">期待インフレ</span>
-                        </div>
-                        <div class="mt-2 flex items-baseline gap-1.5">
-                            <span id="kpi-cpi-rate" class="text-2xl sm:text-3xl font-bold text-amber-300 tracking-tight">2.40</span>
-                            <span class="text-sm font-bold text-slate-400">%</span>
-                        </div>
-                        <p class="text-[11px] text-slate-400 mt-1.5">インフレ目標2%超の定着水準</p>
-                    </div>
-
-                    <div class="bg-slate-800/80 border border-slate-700/70 rounded-xl p-4">
-                        <div class="flex items-center justify-between text-xs text-slate-400 font-medium">
-                            <span>長期金利（10年国債）</span>
-                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300">名目金利</span>
-                        </div>
-                        <div class="mt-2 flex items-baseline gap-1.5">
-                            <span id="kpi-jgb10-yield" class="text-2xl sm:text-3xl font-bold text-indigo-300 tracking-tight">2.80</span>
-                            <span class="text-sm font-bold text-slate-400">%</span>
-                        </div>
-                        <p class="text-[11px] text-slate-400 mt-1.5">変動10年国債＝基準金利×0.66</p>
-                    </div>
-
-                    <div class="bg-slate-800/80 border border-slate-700/70 rounded-xl p-4">
-                        <div class="flex items-center justify-between text-xs text-slate-400 font-medium">
-                            <span>実質金利（名目－CPI）</span>
-                            <span id="kpi-real-status" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">緩和・プラス圏</span>
-                        </div>
-                        <div class="mt-2 flex items-baseline gap-1.5">
-                            <span id="kpi-real-rate" class="text-2xl sm:text-3xl font-bold text-emerald-300 tracking-tight">+0.40</span>
-                            <span class="text-sm font-bold text-slate-400">%</span>
-                        </div>
-                        <p class="text-[11px] text-slate-400 mt-1.5">インフレ目減り防衛の重要指標</p>
-                    </div>
-                </div>
-
-                <!-- マクロシナリオ連動スライダー＆高橋氏解説ポイント -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-1">
-                    <!-- 左側：シナリオシミュレーション操作パネル -->
-                    <div class="lg:col-span-5 bg-slate-800/60 border border-slate-700/80 rounded-xl p-4 sm:p-5 space-y-4">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
-                                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-brand-400"></i>
-                                <span>今後のインフレ・日銀利上げ連動シミュレーション</span>
-                            </h3>
-                            <button type="button" onclick="resetMacroScenario()" class="text-[11px] text-slate-400 hover:text-white underline">標準値へ戻す</button>
-                        </div>
-
-                        <!-- スライダー1：想定インフレ率 -->
-                        <div class="space-y-1.5">
-                            <div class="flex justify-between text-xs">
-                                <label for="macro-inflation-slider" class="text-slate-300 font-medium">今後の想定インフレ率（期待CPI）</label>
-                                <span id="macro-inflation-val" class="font-bold text-amber-300">2.40 %</span>
-                            </div>
-                            <input type="range" id="macro-inflation-slider" min="0.0" max="5.0" step="0.1" value="2.4"
-                                class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-400">
-                            <div class="flex justify-between text-[10px] text-slate-500">
-                                <span>0.0%（デフレ逆戻り）</span>
-                                <span>2.0%（日銀目標）</span>
-                                <span>5.0%（高インフレ）</span>
-                            </div>
-                        </div>
-
-                        <!-- スライダー2：日銀追加利上げ幅 -->
-                        <div class="space-y-1.5">
-                            <div class="flex justify-between text-xs">
-                                <label for="macro-hike-slider" class="text-slate-300 font-medium">日銀の追加利上げ幅（政策金利上乗せ）</label>
-                                <span id="macro-hike-val" class="font-bold text-indigo-300">+0.00 %</span>
-                            </div>
-                            <input type="range" id="macro-hike-slider" min="-0.5" max="2.0" step="0.25" value="0.0"
-                                class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-400">
-                            <div class="flex justify-between text-[10px] text-slate-500">
-                                <span>-0.50%（利下げ）</span>
-                                <span>±0.00%（現状維持）</span>
-                                <span>+2.00%（大幅利上げ）</span>
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-900/80 border border-slate-700/80 rounded-lg p-3 text-xs text-slate-300 leading-relaxed">
-                            <span class="text-brand-300 font-bold">連動計算ロジック：</span>
-                            想定インフレ率と日銀追加利上げの変化に応じて10年国債利回り（名目金利）が変動し、下の比較表の<strong class="text-white">「個人向け国債・変動10年」の予測適用金利（基準金利×0.66）</strong>に即時反映されます。
-                        </div>
-                    </div>
-
-                    <!-- 右側：高橋洋一式・3つの常設解説カード -->
-                    <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div class="bg-slate-800/50 border border-slate-700/70 rounded-xl p-4 flex flex-col justify-between">
-                            <div>
-                                <div class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded mb-2">
-                                    <span>論点① フィッシャー方程式</span>
-                                </div>
-                                <h4 class="text-xs sm:text-sm font-bold text-white mb-1.5">金利上昇の正体は「インフレ期待」</h4>
-                                <p class="text-xs text-slate-300 leading-relaxed">
-                                    名目金利は「実質金利＋期待インフレ率」で決まります。デフレ脱却でインフレが定着すると長期金利は構造的に上昇しやすくなり、低金利の固定預金は実質価値が目減りします。
-                                </p>
-                            </div>
-                            <div class="mt-3 pt-2 border-t border-slate-700/60 text-[11px] text-slate-400">
-                                注目指標：10年国債利回りとCPIの差
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-800/50 border border-slate-700/70 rounded-xl p-4 flex flex-col justify-between">
-                            <div>
-                                <div class="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded mb-2">
-                                    <span>論点② 変動10年国債の優位性</span>
-                                </div>
-                                <h4 class="text-xs sm:text-sm font-bold text-white mb-1.5">金利上昇に自動追随＆元本保証</h4>
-                                <p class="text-xs text-slate-300 leading-relaxed">
-                                    個人向け国債「変動10年」は半年ごとに適用金利が見直され、金利上昇局面で受取利息が増加。さらに国が元本を保証し最低0.05%も確保されるため、個人にとって最も合理的な安全資産と評価されます。
-                                </p>
-                            </div>
-                            <div class="mt-3 pt-2 border-t border-slate-700/60 text-[11px] text-slate-400">
-                                計算式：10年国債基準金利 × 0.66
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-800/50 border border-slate-700/70 rounded-xl p-4 flex flex-col justify-between">
-                            <div>
-                                <div class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded mb-2">
-                                    <span>論点③ 銀行定期との比較</span>
-                                </div>
-                                <h4 class="text-xs sm:text-sm font-bold text-white mb-1.5">銀行の利上げ追随は遅くペイオフ上限あり</h4>
-                                <p class="text-xs text-slate-300 leading-relaxed">
-                                    メガバンクや地銀の定期預金は国債利回りより低く設定されがちで、預金保険（ペイオフ）も1行1,000万円まで。1,000万円超の資金や金利上昇期は国債との利回り差が顕著になります。
-                                </p>
-                            </div>
-                            <div class="mt-3 pt-2 border-t border-slate-700/60 text-[11px] text-slate-400">
-                                比較対象：三菱UFJ・常陽・筑波定期
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- コントロールパネル -->
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                
-                <!-- 1. 預入金額入力 -->
-                <div class="lg:col-span-5 space-y-2.5">
-                    <div class="flex items-center justify-between">
-                        <label for="principal-input" class="text-sm font-bold text-slate-700 flex items-center gap-1.5">
-                            <i data-lucide="wallet" class="w-4 h-4 text-brand-600"></i>
-                            預入金額（元本）
-                        </label>
-                        <span id="principal-formatted" class="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-md">3,000,000 円</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="relative flex-1">
-                            <input type="number" id="principal-input" min="1" max="100000" step="10" value="300"
-                                class="w-full text-right text-xl sm:text-2xl font-bold text-slate-900 bg-slate-50 border border-slate-300 rounded-xl py-2.5 pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
-                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">万円</span>
-                        </div>
-                    </div>
-                    <!-- スライダー＆クイックボタン -->
-                    <div class="space-y-2 pt-1">
-                        <input type="range" id="principal-slider" min="100" max="5000" step="50" value="300"
-                            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-600">
-                        <div class="flex flex-wrap gap-1.5">
-                            <button type="button" onclick="setPrincipal(100)" class="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">100万</button>
-                            <button type="button" onclick="setPrincipal(300)" class="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">300万</button>
-                            <button type="button" onclick="setPrincipal(500)" class="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">500万</button>
-                            <button type="button" onclick="setPrincipal(1000)" class="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">1,000万</button>
-                            <button type="button" onclick="setPrincipal(3000)" class="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">3,000万</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2. 預入期間セレクター -->
-                <div class="lg:col-span-4 space-y-2.5">
-                    <label class="text-sm font-bold text-slate-700 flex items-center gap-1.5">
-                        <i data-lucide="calendar-clock" class="w-4 h-4 text-brand-600"></i>
-                        運用・預入期間
-                    </label>
-                    <div class="grid grid-cols-4 gap-2 bg-slate-100 p-1.5 rounded-xl" id="period-selector">
-                        <button type="button" data-period="1" onclick="setPeriod(1)" class="period-btn py-2.5 text-sm font-bold rounded-lg transition text-slate-600 hover:text-slate-900">1年</button>
-                        <button type="button" data-period="3" onclick="setPeriod(3)" class="period-btn py-2.5 text-sm font-bold rounded-lg transition text-slate-600 hover:text-slate-900">3年</button>
-                        <button type="button" data-period="5" onclick="setPeriod(5)" class="period-btn py-2.5 text-sm font-bold rounded-lg transition tab-active">5年</button>
-                        <button type="button" data-period="10" onclick="setPeriod(10)" class="period-btn py-2.5 text-sm font-bold rounded-lg transition text-slate-600 hover:text-slate-900">10年</button>
-                    </div>
-                    <p id="period-note" class="text-xs text-slate-500 leading-relaxed">
-                        ※個人向け国債の短期銘柄を長期運用する場合は同金利での再投資（単利ベース）として試算します。
-                    </p>
-                </div>
-
-                <!-- 3. 税金表示切り替え -->
-                <div class="lg:col-span-3 space-y-2.5">
-                    <label class="text-sm font-bold text-slate-700 flex items-center gap-1.5">
-                        <i data-lucide="percent" class="w-4 h-4 text-brand-600"></i>
-                        利息表示モード
-                    </label>
-                    <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1.5 rounded-xl">
-                        <button type="button" id="tax-after-btn" onclick="setTaxMode(true)" class="py-2.5 px-2 text-xs sm:text-sm font-bold rounded-lg transition tab-active">
-                            税引後（手取り）
-                        </button>
-                        <button type="button" id="tax-before-btn" onclick="setTaxMode(false)" class="py-2.5 px-2 text-xs sm:text-sm font-bold rounded-lg transition text-slate-600 hover:text-slate-900">
-                            税引前
-                        </button>
-                    </div>
-                    <p class="text-xs text-slate-500">
-                        復興特別所得税を含む <strong class="text-slate-700">20.315%</strong> の源泉分離課税を自動計算します。
-                    </p>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- ハイライトサマリーカード -->
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-4" id="summary-cards">
-            <!-- JSで動的生成 -->
-        </section>
-
-        <!-- グラフ＆比較テーブル エリア -->
-        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
-            
-            <!-- ビジュアルバーチャート -->
-            <section class="xl:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6 flex flex-col">
-                <div class="flex items-center justify-between mb-4">
-                    <div>
-                        <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                            <i data-lucide="bar-chart-3" class="w-5 h-5 text-brand-600"></i>
-                            <span id="chart-title">受取利息の比較（税引後・手取り）</span>
-                        </h2>
-                        <p class="text-xs text-slate-500 mt-0.5" id="chart-subtitle">元本 300万円 ／ 運用期間 5年間 の累計利息</p>
-                    </div>
-                </div>
-                <div class="relative flex-1 min-h-[300px] sm:min-h-[340px] w-full">
-                    <canvas id="interestChart"></canvas>
-                </div>
-                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <span>※単利計算（年利 × 元本 × 運用年数）ベース</span>
-                    <span class="font-medium text-slate-700">単位：円</span>
-                </div>
-            </section>
-
-            <!-- 詳細比較テーブル -->
-            <section class="xl:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden flex flex-col">
-                <div class="p-5 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                        <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                            <i data-lucide="table-2" class="w-5 h-5 text-brand-600"></i>
-                            <span>商品別金利・受取額一覧</span>
-                        </h2>
-                        <p class="text-xs text-slate-500 mt-0.5">
-                            金利欄の数値を直接クリックして変更（キャンペーン金利等のテスト）が可能です。
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-2 text-xs">
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-medium">
-                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
-                            金利直接編集可
-                        </span>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto flex-1">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
-                                <th class="py-3.5 px-4">金融機関・商品名</th>
-                                <th class="py-3.5 px-3 text-right">適用金利(年利)</th>
-                                <th class="py-3.5 px-3 text-right">税引前利息</th>
-                                <th class="py-3.5 px-3 text-right">税引後利息</th>
-                                <th class="py-3.5 px-3 text-right">満期時受取総額</th>
-                                <th class="py-3.5 px-4 text-right">最低金利との差</th>
-                            </tr>
-                        </thead>
-                        <tbody id="comparison-tbody" class="divide-y divide-slate-100 text-sm">
-                            <!-- JSで動的生成 -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="bg-slate-50 px-5 py-3.5 border-t border-slate-200/80 text-xs text-slate-500 space-y-1">
-                    <p>・個人向け国債の金利は2026年11月募集分の適用利率（初回・基準金利）を表示しています。変動10年は半年ごとに適用利率が見直されます。</p>
-                    <p>・スーパー定期の金利は2026年11月時点の店頭表示金利（300万円未満・300万円以上共通水準）をもとに試算しています。実際の商品性（単利・複利型や中途解約規定）は各金融機関の説明書をご確認ください。</p>
-                </div>
-            </section>
+      <!-- 4つのマクロ指標KPI（常時表示） -->
+      <div class="p-5 grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div class="bg-slate-800/70 border border-slate-700/80 rounded-xl p-3.5">
+          <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+            <span>日銀 政策金利</span>
+            <span class="text-blue-400 font-semibold bg-blue-500/10 px-1.5 py-0.5 rounded text-[10px]">無担保コール</span>
+          </div>
+          <div class="flex items-baseline gap-1">
+            <span id="kpiPolicyRate" class="text-2xl font-extrabold text-white">1.00</span>
+            <span class="text-sm text-slate-400">%</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">追加利上げシナリオ連動基準</p>
         </div>
 
-    </main>
-
-    <!-- 新規商品追加モーダル -->
-    <div id="add-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <i data-lucide="plus-square" class="w-5 h-5 text-brand-600"></i>
-                    <span>比較商品の追加</span>
-                </h3>
-                <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <form id="add-product-form" onsubmit="handleAddProduct(event)" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">金融機関名 <span class="text-rose-500">*</span></label>
-                    <input type="text" id="new-bank" required placeholder="例：〇〇信用金庫 / ネット銀行"
-                        class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">商品名・プラン名 <span class="text-rose-500">*</span></label>
-                    <input type="text" id="new-name" required placeholder="例：冬の特別金利キャンペーン定期"
-                        class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">カテゴリ</label>
-                        <select id="new-category" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-                            <option value="custom">追加・キャンペーン</option>
-                            <option value="regional">地方銀行</option>
-                            <option value="mega">メガバンク・ネット</option>
-                            <option value="jgb">国債・債券</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">適用年利（税引前 %） <span class="text-rose-500">*</span></label>
-                        <div class="relative">
-                            <input type="number" id="new-rate" required step="0.001" min="0" max="20" placeholder="1.250"
-                                class="w-full px-3.5 py-2 pr-8 text-sm font-bold text-right border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">%</span>
-                        </div>
-                    </div>
-                </div>
-                <p class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg">
-                    ※追加した商品は全期間（1年・3年・5年・10年）に同じ初期金利で登録され、後から期間ごとに個別編集できます。
-                </p>
-                <div class="pt-2 flex items-center justify-end gap-2">
-                    <button type="button" onclick="closeAddModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition">キャンセル</button>
-                    <button type="submit" class="px-5 py-2 text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow transition">追加する</button>
-                </div>
-            </form>
+        <div class="bg-slate-800/70 border border-slate-700/80 rounded-xl p-3.5">
+          <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+            <span>消費者物価指数 (CPI)</span>
+            <span class="text-amber-400 font-semibold bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">期待インフレ</span>
+          </div>
+          <div class="flex items-baseline gap-1">
+            <span id="kpiInflationRate" class="text-2xl font-extrabold text-amber-400">2.40</span>
+            <span class="text-sm text-slate-400">%</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">インフレ目標2%超の定着水準</p>
         </div>
+
+        <div class="bg-slate-800/70 border border-slate-700/80 rounded-xl p-3.5">
+          <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+            <span>長期金利 (10年国債)</span>
+            <span class="text-indigo-400 font-semibold bg-indigo-500/10 px-1.5 py-0.5 rounded text-[10px]">名目金利</span>
+          </div>
+          <div class="flex items-baseline gap-1">
+            <span id="kpiLongTermRate" class="text-2xl font-extrabold text-indigo-300">2.80</span>
+            <span class="text-sm text-slate-400">%</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">変動10年国債＝基準金利×0.66</p>
+        </div>
+
+        <div class="bg-slate-800/70 border border-slate-700/80 rounded-xl p-3.5">
+          <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+            <span>実質金利 (名目－CPI)</span>
+            <span id="kpiRealRateTag" class="text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded text-[10px]">緩和・プラス圏</span>
+          </div>
+          <div class="flex items-baseline gap-1">
+            <span id="kpiRealRate" class="text-2xl font-extrabold text-emerald-400">+0.40</span>
+            <span class="text-sm text-slate-400">%</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">インフレ目減り防衛の重要指標</p>
+        </div>
+      </div>
+
+      <!-- インタラクティブ連動スライダー ＆ 解説ロジック常設パネル -->
+      <div class="px-5 pb-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- スライダー操作部 -->
+        <div class="lg:col-span-5 bg-slate-800/60 border border-slate-700/80 rounded-xl p-4 flex flex-col justify-between space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+              <i data-lucide="sliders" class="w-4 h-4"></i>
+              今後のインフレ・日銀利上げ連動シミュレーション
+            </span>
+            <button onclick="resetMacroParams()" class="text-[11px] text-slate-300 hover:text-white underline cursor-pointer">標準値へ戻す</button>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300">今後の想定インフレ率（期待CPI）</span>
+                <span id="sliderInflationVal" class="font-bold text-amber-400">2.40 %</span>
+              </div>
+              <input type="range" id="macroInflationSlider" min="0.0" max="5.0" step="0.1" value="2.4" oninput="updateMacroSimulation()" class="w-full" />
+              <div class="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                <span>0.0%（デフレ逆戻り）</span>
+                <span>2.0%（日銀目標）</span>
+                <span>5.0%（高インフレ）</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300">日銀の追加利上げ幅（政策金利上乗せ）</span>
+                <span id="sliderHikeVal" class="font-bold text-blue-300">+0.00 %</span>
+              </div>
+              <input type="range" id="macroHikeSlider" min="-0.5" max="2.0" step="0.25" value="0.0" oninput="updateMacroSimulation()" class="w-full" />
+              <div class="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                <span>-0.50%（利下げ）</span>
+                <span>±0.00%（現状維持）</span>
+                <span>+2.00%（大幅利上げ）</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/80 border border-slate-700/70 rounded-lg p-2.5 text-[11px] text-slate-300 leading-relaxed">
+            <span class="text-amber-400 font-semibold">連動計算ロジック：</span>
+            想定インフレ率と日銀追加利上げの変化に応じて10年国債利回り（名目金利）が変動し、下の比較表の<strong>「個人向け国債・変動10年」の予測適用金利（基準金利×0.66）</strong>に即時反映されます。
+          </div>
+        </div>
+
+        <!-- 高橋洋一式3大解説トピック常設カード -->
+        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="bg-slate-800/50 border border-slate-700/70 rounded-xl p-3.5 flex flex-col justify-between">
+            <div>
+              <div class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-300 bg-blue-500/15 px-2 py-0.5 rounded mb-2">
+                論点① フィッシャー方程式
+              </div>
+              <h3 class="text-xs font-bold text-white mb-1.5">金利上昇の正体は「インフレ期待」</h3>
+              <p class="text-[11px] text-slate-300 leading-relaxed">
+                名目金利は「実質金利＋期待インフレ率」で決まります。デフレ脱却でインフレが定着すると長期金利は構造的に上昇しやすくなり、低金利の固定預金は実質価値が目減りします。
+              </p>
+            </div>
+            <div class="mt-2.5 pt-2 border-t border-slate-700/60 text-[10px] text-slate-400">
+              注目指標：10年国債利回りとCPIの差
+            </div>
+          </div>
+
+          <div class="bg-slate-800/50 border border-slate-700/70 rounded-xl p-3.5 flex flex-col justify-between">
+            <div>
+              <div class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded mb-2">
+                論点② 変動10年国債の優位性
+              </div>
+              <h3 class="text-xs font-bold text-white mb-1.5">金利上昇に自動追随＆元本保証</h3>
+              <p class="text-[11px] text-slate-300 leading-relaxed">
+                個人向け国債「変動10年」は半年ごとに適用金利が見直され、金利上昇局面で受取利息が増加。さらに国が元本を保証し最低0.05%も確保されるため、個人にとって最も合理的な安全資産と評価されます。
+              </p>
+            </div>
+            <div class="mt-2.5 pt-2 border-t border-slate-700/60 text-[10px] text-emerald-300/90 font-medium">
+              計算式：10年国債基準金利 × 0.66
+            </div>
+          </div>
+
+          <div class="bg-slate-800/50 border border-slate-700/70 rounded-xl p-3.5 flex flex-col justify-between">
+            <div>
+              <div class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded mb-2">
+                論点③ 銀行定期との比較
+              </div>
+              <h3 class="text-xs font-bold text-white mb-1.5">銀行の利上げ追随は遅くペイオフ上限あり</h3>
+              <p class="text-[11px] text-slate-300 leading-relaxed">
+                メガバンクや地銀の定期預金は国債利回りより低く設定されがちで、預金保険（ペイオフ）も1行1,000万円まで。1,000万円超の資金や金利上昇期は国債との利回り差が顕著になります。
+              </p>
+            </div>
+            <div class="mt-2.5 pt-2 border-t border-slate-700/60 text-[10px] text-slate-400">
+              比較対象：三菱UFJ・常陽・筑波定期
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- コントロールパネル（条件設定） -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
+        
+        <!-- 預入・購入金額 -->
+        <div class="md:col-span-4">
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+            預入・購入金額（元本）
+          </label>
+          <div class="relative flex items-center">
+            <input type="number" id="principalInput" value="1000" min="1" max="100000" step="10"
+              class="w-full text-xl font-bold text-slate-900 bg-slate-50 border border-slate-300 rounded-xl pl-4 pr-14 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              oninput="renderAll()" />
+            <span class="absolute right-4 text-sm font-bold text-slate-500">万円</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            <button onclick="setPrincipal(100)" class="text-xs bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-600 font-medium px-2.5 py-1 rounded-md transition cursor-pointer">100万</button>
+            <button onclick="setPrincipal(300)" class="text-xs bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-600 font-medium px-2.5 py-1 rounded-md transition cursor-pointer">300万</button>
+            <button onclick="setPrincipal(500)" class="text-xs bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-600 font-medium px-2.5 py-1 rounded-md transition cursor-pointer">500万</button>
+            <button onclick="setPrincipal(1000)" class="text-xs bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-600 font-medium px-2.5 py-1 rounded-md transition cursor-pointer">1,000万</button>
+            <button onclick="setPrincipal(3000)" class="text-xs bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-600 font-medium px-2.5 py-1 rounded-md transition cursor-pointer">3,000万</button>
+          </div>
+        </div>
+
+        <!-- 運用期間 -->
+        <div class="md:col-span-4">
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+            シミュレーション運用期間
+          </label>
+          <div class="grid grid-cols-4 gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button onclick="setYears(1)" id="yr-1" class="yr-btn py-2 text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 transition cursor-pointer">1年</button>
+            <button onclick="setYears(3)" id="yr-3" class="yr-btn py-2 text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 transition cursor-pointer">3年</button>
+            <button onclick="setYears(5)" id="yr-5" class="yr-btn py-2 text-sm font-bold rounded-lg tab-active transition cursor-pointer">5年</button>
+            <button onclick="setYears(10)" id="yr-10" class="yr-btn py-2 text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 transition cursor-pointer">10年</button>
+          </div>
+          <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
+            <i data-lucide="info" class="w-3.5 h-3.5 text-blue-500"></i>
+            満期期間が短い商品は同金利で自動継続した場合で試算
+          </p>
+        </div>
+
+        <!-- 税区分・フィルタ -->
+        <div class="md:col-span-4 space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+              税金表示モード（復興特別所得税含む 20.315%）
+            </label>
+            <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <button onclick="setTaxMode(true)" id="tax-after" class="py-2 text-sm font-bold rounded-lg tab-active transition cursor-pointer">税引後（手取り）</button>
+              <button onclick="setTaxMode(false)" id="tax-before" class="py-2 text-sm font-bold rounded-lg text-slate-600 hover:text-slate-900 transition cursor-pointer">税引前（表面）</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- カテゴリフィルター -->
+      <div class="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs font-bold text-slate-500 mr-1">機関絞り込み:</span>
+          <button onclick="toggleFilter('ALL')" id="flt-ALL" class="flt-btn px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white shadow-xs cursor-pointer">すべて表示</button>
+          <button onclick="toggleFilter('国債')" id="flt-国債" class="flt-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">個人向け国債</button>
+          <button onclick="toggleFilter('三菱UFJ銀行')" id="flt-三菱UFJ銀行" class="flt-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">三菱UFJ銀行</button>
+          <button onclick="toggleFilter('常陽銀行')" id="flt-常陽銀行" class="flt-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">常陽銀行</button>
+          <button onclick="toggleFilter('筑波銀行')" id="flt-筑波銀行" class="flt-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">筑波銀行</button>
+          <button onclick="toggleFilter('その他')" id="flt-その他" class="flt-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">追加・その他</button>
+        </div>
+        <div class="text-xs text-slate-500">
+          ※ 表内の<span class="font-semibold text-blue-600 underline decoration-dotted">金利(%)</span>をクリックすると直接数値を書き換えて試算できます
+        </div>
+      </div>
+    </section>
+
+    <!-- サマリーカード（トップ結果ハイライト） -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4" id="summaryCards">
+      <!-- JSで動的生成 -->
+    </section>
+
+    <!-- メインコンテンツ：グラフ＆比較テーブル -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- 比較テーブル -->
+      <section class="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+        <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+          <h2 class="font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="table-2" class="w-5 h-5 text-blue-600"></i>
+            金融商品別 金利・受取利息一覧
+          </h2>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="text-slate-500">並び替え:</span>
+            <select id="sortSelect" onchange="renderAll()" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="interest_desc">受取利息が高い順</option>
+              <option value="rate_desc">適用金利が高い順</option>
+              <option value="institution">金融機関順</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto flex-1">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <th class="py-3 px-4">金融機関 / 商品名</th>
+                <th class="py-3 px-3 text-right">適用金利(年率)</th>
+                <th class="py-3 px-3 text-right" id="thInterestLabel">受取利息(税引後)</th>
+                <th class="py-3 px-4 text-right">満期時受取総額</th>
+                <th class="py-3 px-3 text-center">特徴・備考</th>
+                <th class="py-3 px-2 text-center w-10"></th>
+              </tr>
+            </thead>
+            <tbody id="productTableBody" class="divide-y divide-slate-100 text-sm">
+              <!-- JSで動的生成 -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ビジュアル比較チャート -->
+      <section class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col">
+        <div class="mb-4">
+          <h2 class="font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-600"></i>
+            受取利息の比較グラフ
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5" id="chartSubTitle">元本 1,000万円 / 5年間運用（税引後）</p>
+        </div>
+        <div class="relative flex-1 min-h-[320px] w-full">
+          <canvas id="comparisonChart"></canvas>
+        </div>
+        <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 space-y-1">
+          <p>・個人向け国債は1万円単位で購入可能、発行後1年経過で中途換金可（直前2回分の各利子相当額×0.79685が差し引かれます）。</p>
+          <p>・銀行定期預金は預金保険制度（ペイオフ）により1金融機関あたり元本1,000万円とその利息まで保護されます。</p>
+        </div>
+      </section>
+
     </div>
 
-    <script>
-        // 税率定数（所得税15% + 復興特別所得税0.315% + 住民税5% = 20.315%）
-        const TAX_RATE = 0.20315;
+    <!-- 金融機関別の特徴比較ガイド -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+      <h2 class="font-bold text-slate-800 flex items-center gap-2 mb-4">
+        <i data-lucide="shield-check" class="w-5 h-5 text-blue-600"></i>
+        各金融機関・商品の選定ポイント（安全資産ポートフォリオの目安）
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+        <div class="p-4 rounded-xl bg-indigo-50/70 border border-indigo-100">
+          <div class="font-bold text-indigo-900 mb-1 flex items-center justify-between">
+            <span>個人向け国債（財務省）</span>
+            <span class="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded">国が元本保証</span>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            1,000万円を超えるまとまった資金の置き場として最有力。「変動10年」は半年ごとに実勢金利に応じて利率が見直されるため、インフレ・金利上昇局面に強いのが特徴です。
+          </p>
+        </div>
+        <div class="p-4 rounded-xl bg-rose-50/70 border border-rose-100">
+          <div class="font-bold text-rose-900 mb-1 flex items-center justify-between">
+            <span>三菱UFJ銀行</span>
+            <span class="text-xs bg-rose-600 text-white px-2 py-0.5 rounded">メガバンク</span>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            全国ネットワークと高い信用力を持つメガバンク。長期のスーパー定期（5年・10年）の基準金利が底上げされており、メインバンクとしての利便性と中長期運用を両立できます。
+          </p>
+        </div>
+        <div class="p-4 rounded-xl bg-emerald-50/70 border border-emerald-100">
+          <div class="font-bold text-emerald-900 mb-1 flex items-center justify-between">
+            <span>常陽銀行</span>
+            <span class="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded">茨城トップ地銀</span>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            茨城県内の店舗網・ATM網が充実。退職金専用定期やインターネット支店・アプリ限定定期などの特別金利キャンペーン時は、メガバンクを上回る金利水準が提示されます。
+          </p>
+        </div>
+        <div class="p-4 rounded-xl bg-sky-50/70 border border-sky-100">
+          <div class="font-bold text-sky-900 mb-1 flex items-center justify-between">
+            <span>筑波銀行</span>
+            <span class="text-xs bg-sky-600 text-white px-2 py-0.5 rounded">地域密着地銀</span>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            インターネット支店「つくばインターネット支店」の定期預金や、地元向けの季節キャンペーン定期などで店頭表示金利より高い優遇金利を設定するケースが多く見られます。
+          </p>
+        </div>
+      </div>
+    </section>
 
-        // 初期データ（2026年11月最新金利）
-        const INITIAL_PRODUCTS = [
-            {
-                id: 'jgb-var10',
-                bank: '個人向け国債',
-                name: '変動10年（マクロ連動・予測反映）',
-                category: 'jgb',
-                badge: '国債・変動',
-                nativePeriod: 10,
-                rates: { 1: 1.850, 3: 1.850, 5: 1.850, 10: 1.850 },
-                note: '半年ごとに利率見直し・最低金利0.05%保証'
-            },
-            {
-                id: 'jgb-fix5',
-                bank: '個人向け国債',
-                name: '固定5年（2026年11月募集）',
-                category: 'jgb',
-                badge: '国債・固定',
-                nativePeriod: 5,
-                rates: { 1: 2.170, 3: 2.170, 5: 2.170, 10: 2.170 },
-                note: '満期まで利率固定・1年経過で中途換金可'
-            },
-            {
-                id: 'jgb-fix3',
-                bank: '個人向け国債',
-                name: '固定3年（2026年11月募集）',
-                category: 'jgb',
-                badge: '国債・固定',
-                nativePeriod: 3,
-                rates: { 1: 1.940, 3: 1.940, 5: 1.940, 10: 1.940 },
-                note: '満期まで利率固定・1年経過で中途換金可'
-            },
-            {
-                id: 'mufg-super',
-                bank: '三菱ＵＦＪ銀行',
-                name: 'スーパー定期',
-                category: 'mega',
-                badge: 'メガバンク',
-                nativePeriod: null,
-                rates: { 1: 0.700, 3: 0.900, 5: 1.100, 10: 1.350 },
-                note: '預金保険制度対象'
-            },
-            {
-                id: 'joyo-super',
-                bank: '常陽銀行',
-                name: 'スーパー定期・ネット定期',
-                category: 'regional',
-                badge: '茨城地銀',
-                nativePeriod: null,
-                rates: { 1: 0.700, 3: 0.900, 5: 1.100, 10: 1.350 },
-                note: '預金保険制度対象'
-            },
-            {
-                id: 'tsukuba-super',
-                bank: '筑波銀行',
-                name: 'スーパー定期（店頭・キャンペーン基準）',
-                category: 'regional',
-                badge: '茨城地銀',
-                nativePeriod: null,
-                rates: { 1: 0.600, 3: 0.775, 5: 0.825, 10: 0.925 },
-                note: '預金保険制度対象'
-            }
-        ];
+  </main>
 
-        // マクロ経済基準定数（2026年11月基準）
-        const BASE_MACRO = {
-            bojPolicyRate: 1.00,      // 日銀政策金利 1.00%
-            expectedInflation: 2.40,  // 期待インフレ率(CPI) 2.40%
-            baseRealRate: 0.40        // 基準実質金利 0.40%（名目10年国債利回り 2.80% -> 2.80 * 0.66 ≈ 1.85%）
+  <!-- 商品追加モーダル -->
+  <div id="addModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden animate-fade-in">
+      <div class="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <h3 class="font-bold flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-400"></i>
+          金融商品・キャンペーン金利を追加
+        </h3>
+        <button onclick="closeAddModal()" class="text-slate-400 hover:text-white cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="addNewProduct(event)" class="p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">金融機関カテゴリ</label>
+          <select id="newInstitution" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="常陽銀行">常陽銀行</option>
+            <option value="筑波銀行">筑波銀行</option>
+            <option value="三菱UFJ銀行">三菱UFJ銀行</option>
+            <option value="国債">国債</option>
+            <option value="その他">その他（ネット銀行・信金など）</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">商品名・プラン名</label>
+          <input type="text" id="newName" required placeholder="例：常陽銀行 退職金特別定期 / ネット専用定期1年"
+            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">適用金利（年率 %）</label>
+            <input type="number" id="newRate" required step="0.001" min="0.001" max="20" placeholder="例：0.85"
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">商品の基準期間</label>
+            <select id="newTerm" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="1年">1年</option>
+              <option value="3年">3年</option>
+              <option value="5年">5年</option>
+              <option value="10年">10年</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">備考・条件メモ（任意）</label>
+          <input type="text" id="newNote" placeholder="例：新規資金限定・窓口限定など"
+            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closeAddModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">キャンセル</button>
+          <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-lg shadow cursor-pointer">一覧に追加する</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // 2026年11月基準の初期データ（個人向け国債・三菱UFJ・常陽・筑波）
+    const DEFAULT_PRODUCTS = [
+      {
+        id: 'jgb-var10',
+        institution: '国債',
+        name: '個人向け国債 変動10年',
+        rate: 1.85,
+        term: '10年',
+        badge: '半年毎金利見直し',
+        note: '基準金利×0.66 / 最低保証0.05% / 1年後中途換金可',
+        color: '#4f46e5',
+        isCustom: false
+      },
+      {
+        id: 'jgb-fix5',
+        institution: '国債',
+        name: '個人向け国債 固定5年',
+        rate: 1.55,
+        term: '5年',
+        badge: '5年間固定',
+        note: '満期まで利率固定 / 1万円単位 / 国が元本保証',
+        color: '#6366f1',
+        isCustom: false
+      },
+      {
+        id: 'jgb-fix3',
+        institution: '国債',
+        name: '個人向け国債 固定3年',
+        rate: 1.25,
+        term: '3年',
+        badge: '3年間固定',
+        note: '満期まで利率固定 / 短期〜中期の安全運用向け',
+        color: '#818cf8',
+        isCustom: false
+      },
+      {
+        id: 'mufg-1y',
+        institution: '三菱UFJ銀行',
+        name: 'スーパー定期（1年）',
+        rate: 0.45,
+        term: '1年',
+        badge: '店頭・ネット共通',
+        note: '1,000万円未満（スーパー定期300も同水準）',
+        color: '#e11d48',
+        isCustom: false
+      },
+      {
+        id: 'mufg-5y',
+        institution: '三菱UFJ銀行',
+        name: 'スーパー定期（5年）',
+        rate: 0.70,
+        term: '5年',
+        badge: '中長期固定',
+        note: '複利型（個人）選択可 / メガバンク基準金利',
+        color: '#be123c',
+        isCustom: false
+      },
+      {
+        id: 'mufg-10y',
+        institution: '三菱UFJ銀行',
+        name: 'スーパー定期（10年）',
+        rate: 0.90,
+        term: '10年',
+        badge: '長期固定',
+        note: '長期固定金利 / ペイオフ対象1,000万円まで',
+        color: '#9f1239',
+        isCustom: false
+      },
+      {
+        id: 'joyo-1y',
+        institution: '常陽銀行',
+        name: 'スーパー定期（1年・店頭/アプリ）',
+        rate: 0.45,
+        term: '1年',
+        badge: '茨城メイン地銀',
+        note: '常陽バンキングアプリでの預入対応',
+        color: '#059669',
+        isCustom: false
+      },
+      {
+        id: 'joyo-5y',
+        institution: '常陽銀行',
+        name: 'スーパー定期（5年）',
+        rate: 0.65,
+        term: '5年',
+        badge: '5年固定',
+        note: '店舗相談・相続/退職資金プラン対象ベース',
+        color: '#047857',
+        isCustom: false
+      },
+      {
+        id: 'tsukuba-net1y',
+        institution: '筑波銀行',
+        name: 'つくばインターネット支店 定期（1年）',
+        rate: 0.60,
+        term: '1年',
+        badge: 'ネット支店優遇',
+        note: '全国から口座開設可 / 店頭より高めの優遇金利',
+        color: '#0284c7',
+        isCustom: false
+      },
+      {
+        id: 'tsukuba-5y',
+        institution: '筑波銀行',
+        name: 'スーパー定期（5年・店頭）',
+        rate: 0.65,
+        term: '5年',
+        badge: '5年固定',
+        note: '地域密着窓口サポート / 1,000万円超は大口定期扱い',
+        color: '#0369a1',
+        isCustom: false
+      }
+    ];
+
+    let products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
+    let selectedYears = 5;
+    let isAfterTax = true;
+    let currentFilter = 'ALL';
+    let chartInstance = null;
+
+    const TAX_RATE = 0.20315; // 所得税15.315% + 住民税5%
+
+    // マクロ経済パラメータ（高橋洋一式分析視点）
+    const BASE_POLICY_RATE = 1.00;
+    const BASE_INFLATION_RATE = 2.40;
+    const BASE_REAL_RATE = 0.40; // 名目10年国債2.80% - インフレ2.40%
+
+    function updateMacroSimulation() {
+      const inflationSlider = document.getElementById('macroInflationSlider');
+      const hikeSlider = document.getElementById('macroHikeSlider');
+      if (!inflationSlider || !hikeSlider) return;
+
+      const expectedInflation = parseFloat(inflationSlider.value);
+      const additionalHike = parseFloat(hikeSlider.value);
+
+      // スライダー表示更新
+      document.getElementById('sliderInflationVal').textContent = expectedInflation.toFixed(2) + ' %';
+      document.getElementById('sliderHikeVal').textContent = (additionalHike >= 0 ? '+' : '') + additionalHike.toFixed(2) + ' %';
+
+      // マクロ指標再計算（フィッシャー方程式 + 日銀利上げ波及）
+      const policyRate = Math.max(0.0, BASE_POLICY_RATE + additionalHike);
+      const longTermYield = Math.max(0.10, BASE_REAL_RATE + expectedInflation + (additionalHike * 0.65));
+      const realRate = longTermYield - expectedInflation;
+
+      // KPIカード更新
+      document.getElementById('kpiPolicyRate').textContent = policyRate.toFixed(2);
+      document.getElementById('kpiInflationRate').textContent = expectedInflation.toFixed(2);
+      document.getElementById('kpiLongTermRate').textContent = longTermYield.toFixed(2);
+
+      const realRateEl = document.getElementById('kpiRealRate');
+      const realRateTagEl = document.getElementById('kpiRealRateTag');
+      realRateEl.textContent = (realRate >= 0 ? '+' : '') + realRate.toFixed(2);
+      if (realRate >= 0) {
+        realRateEl.className = 'text-2xl font-extrabold text-emerald-400';
+        realRateTagEl.textContent = 'プラス圏・実質防衛';
+        realRateTagEl.className = 'text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded text-[10px]';
+      } else {
+        realRateEl.className = 'text-2xl font-extrabold text-rose-400';
+        realRateTagEl.textContent = 'マイナス圏・目減り注意';
+        realRateTagEl.className = 'text-rose-400 font-semibold bg-rose-500/10 px-1.5 py-0.5 rounded text-[10px]';
+      }
+
+      // 個人向け国債「変動10年」の予測適用金利を連動更新（基準金利 × 0.66、最低0.05%）
+      const var10Rate = Math.max(0.05, Number((longTermYield * 0.66).toFixed(2)));
+      const var10Product = products.find(p => p.id === 'jgb-var10');
+      if (var10Product) {
+        var10Product.rate = var10Rate;
+        var10Product.note = `10年国債利回り${longTermYield.toFixed(2)}%×0.66連動 / 最低保証0.05%`;
+      }
+
+      // 判定バッジ更新
+      const bestBank = products
+        .filter(p => p.institution !== '国債')
+        .reduce((max, p) => (p.rate > max.rate ? p : max), { rate: 0, name: '' });
+
+      const diffRate = (var10Rate - bestBank.rate).toFixed(2);
+      const verdictText = document.getElementById('macroVerdictText');
+      const verdictBadge = document.getElementById('macroVerdictBadge');
+
+      if (var10Rate > bestBank.rate) {
+        verdictText.textContent = `判定：個人向け国債（変動10年 ${var10Rate.toFixed(2)}%）が銀行最高金利を +${diffRate}% 上回り最有力`;
+        verdictBadge.className = 'inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 px-3.5 py-1.5 rounded-xl text-xs font-bold self-start sm:self-auto';
+      } else {
+        verdictText.textContent = `判定：低インフレ想定のため銀行定期（${bestBank.name} ${bestBank.rate.toFixed(2)}%）が優位`;
+        verdictBadge.className = 'inline-flex items-center gap-2 bg-blue-500/20 border border-blue-400/40 text-blue-300 px-3.5 py-1.5 rounded-xl text-xs font-bold self-start sm:self-auto';
+      }
+
+      renderAll();
+    }
+
+    function resetMacroParams() {
+      document.getElementById('macroInflationSlider').value = BASE_INFLATION_RATE;
+      document.getElementById('macroHikeSlider').value = 0.0;
+      updateMacroSimulation();
+    }
+
+    function setPrincipal(manYen) {
+      document.getElementById('principalInput').value = manYen;
+      renderAll();
+    }
+
+    function setYears(yrs) {
+      selectedYears = yrs;
+      document.querySelectorAll('.yr-btn').forEach(btn => {
+        btn.classList.remove('tab-active');
+        btn.classList.add('text-slate-600');
+      });
+      const activeBtn = document.getElementById(`yr-${yrs}`);
+      activeBtn.classList.add('tab-active');
+      activeBtn.classList.remove('text-slate-600');
+      renderAll();
+    }
+
+    function setTaxMode(afterTax) {
+      isAfterTax = afterTax;
+      const btnAfter = document.getElementById('tax-after');
+      const btnBefore = document.getElementById('tax-before');
+      if (isAfterTax) {
+        btnAfter.classList.add('tab-active');
+        btnAfter.classList.remove('text-slate-600');
+        btnBefore.classList.remove('tab-active');
+        btnBefore.classList.add('text-slate-600');
+        document.getElementById('thInterestLabel').textContent = '受取利息(税引後)';
+      } else {
+        btnBefore.classList.add('tab-active');
+        btnBefore.classList.remove('text-slate-600');
+        btnAfter.classList.remove('tab-active');
+        btnAfter.classList.add('text-slate-600');
+        document.getElementById('thInterestLabel').textContent = '受取利息(税引前)';
+      }
+      renderAll();
+    }
+
+    function toggleFilter(category) {
+      currentFilter = category;
+      document.querySelectorAll('.flt-btn').forEach(btn => {
+        btn.className = 'flt-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer transition';
+      });
+      const activeBtn = document.getElementById(`flt-${category}`);
+      if (activeBtn) {
+        activeBtn.className = 'flt-btn px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white shadow-xs cursor-pointer transition';
+      }
+      renderAll();
+    }
+
+    function updateRate(id, newVal) {
+      const parsed = parseFloat(newVal);
+      if (isNaN(parsed) || parsed < 0) return;
+      const target = products.find(p => p.id === id);
+      if (target) {
+        target.rate = parsed;
+        renderAll();
+      }
+    }
+
+    function deleteProduct(id) {
+      products = products.filter(p => p.id !== id);
+      renderAll();
+    }
+
+    function resetDefaults() {
+      products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
+      document.getElementById('principalInput').value = 1000;
+      setYears(5);
+      setTaxMode(true);
+      toggleFilter('ALL');
+      resetMacroParams();
+    }
+
+    function openAddModal() {
+      const modal = document.getElementById('addModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeAddModal() {
+      const modal = document.getElementById('addModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function addNewProduct(e) {
+      e.preventDefault();
+      const institution = document.getElementById('newInstitution').value;
+      const name = document.getElementById('newName').value.trim();
+      const rate = parseFloat(document.getElementById('newRate').value);
+      const term = document.getElementById('newTerm').value;
+      const note = document.getElementById('newNote').value.trim() || 'ユーザー追加商品';
+
+      const colorMap = {
+        '国債': '#4f46e5',
+        '三菱UFJ銀行': '#e11d48',
+        '常陽銀行': '#059669',
+        '筑波銀行': '#0284c7',
+        'その他': '#d97706'
+      };
+
+      products.push({
+        id: 'custom-' + Date.now(),
+        institution,
+        name,
+        rate,
+        term,
+        badge: `${term}・追加`,
+        note,
+        color: colorMap[institution] || '#d97706',
+        isCustom: true
+      });
+
+      document.getElementById('newName').value = '';
+      document.getElementById('newRate').value = '';
+      document.getElementById('newNote').value = '';
+      closeAddModal();
+      renderAll();
+    }
+
+    function formatYen(amount) {
+      return Math.round(amount).toLocaleString('ja-JP') + ' 円';
+    }
+
+    function getBadgeStyle(inst) {
+      switch (inst) {
+        case '国債': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+        case '三菱UFJ銀行': return 'bg-rose-100 text-rose-800 border-rose-200';
+        case '常陽銀行': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        case '筑波銀行': return 'bg-sky-100 text-sky-800 border-sky-200';
+        default: return 'bg-amber-100 text-amber-800 border-amber-200';
+      }
+    }
+
+    function renderAll() {
+      const principalMan = parseFloat(document.getElementById('principalInput').value) || 0;
+      const principalYen = principalMan * 10000;
+      const sortMode = document.getElementById('sortSelect').value;
+
+      // フィルタリング
+      let filtered = products.filter(p => {
+        if (currentFilter === 'ALL') return true;
+        return p.institution === currentFilter;
+      });
+
+      // 利息計算（単利ベース：国債は半年毎利払い単利、定期預金は比較のため同期間単利ベースで統一）
+      let computed = filtered.map(p => {
+        const grossInterest = principalYen * (p.rate / 100) * selectedYears;
+        const netInterest = grossInterest * (1 - TAX_RATE);
+        const displayInterest = isAfterTax ? netInterest : grossInterest;
+        const totalAmount = principalYen + displayInterest;
+        return {
+          ...p,
+          grossInterest,
+          netInterest,
+          displayInterest,
+          totalAmount
         };
+      });
 
-        // アプリケーション状態
-        let state = {
-            principalMan: 300, // 万円
-            period: 5,         // 年 (1, 3, 5, 10)
-            showAfterTax: true,
-            macroInflation: BASE_MACRO.expectedInflation,
-            macroHike: 0.0,
-            products: JSON.parse(JSON.stringify(INITIAL_PRODUCTS))
-        };
+      // ソート
+      if (sortMode === 'interest_desc') {
+        computed.sort((a, b) => b.displayInterest - a.displayInterest);
+      } else if (sortMode === 'rate_desc') {
+        computed.sort((a, b) => b.rate - a.rate);
+      } else if (sortMode === 'institution') {
+        computed.sort((a, b) => a.institution.localeCompare(b.institution, 'ja'));
+      }
 
-        let interestChart = null;
+      renderSummaryCards(computed, principalMan);
+      renderTable(computed);
+      renderChart(computed, principalMan);
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    }
 
-        // マクロ経済指標の計算と変動10年国債金利への連動反映
-        function syncMacroToProducts() {
-            const effectiveBojRate = Math.max(0, BASE_MACRO.bojPolicyRate + state.macroHike);
-            // フィッシャー方程式：名目10年国債利回り ＝ 実質金利（政策金利変化の一部を反映） ＋ 期待インフレ率
-            const dynamicRealRate = BASE_MACRO.baseRealRate + (state.macroHike * 0.45);
-            const nominalJgb10Yield = Math.max(0.10, dynamicRealRate + state.macroInflation);
-            const actualRealRate = nominalJgb10Yield - state.macroInflation;
+    function renderSummaryCards(computed, principalMan) {
+      const container = document.getElementById('summaryCards');
+      if (computed.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
 
-            // 個人向け国債・変動10年の適用金利 ＝ 基準金利(10年国債利回り) × 0.66（最低0.05%）
-            const var10Rate = Math.max(0.05, Number((nominalJgb10Yield * 0.66).toFixed(3)));
+      const sortedByGain = [...computed].sort((a, b) => b.displayInterest - a.displayInterest);
+      const best = sortedByGain[0];
+      const lowest = sortedByGain[sortedByGain.length - 1];
+      const diff = best.displayInterest - lowest.displayInterest;
+      const taxLabel = isAfterTax ? '税引後手取り' : '税引前';
 
-            const var10Product = state.products.find(p => p.id === 'jgb-var10');
-            if (var10Product) {
-                var10Product.rates = { 1: var10Rate, 3: var10Rate, 5: var10Rate, 10: var10Rate };
-            }
+      container.innerHTML = `
+        <div class="bg-white rounded-2xl p-4 border border-blue-200 shadow-xs flex items-start gap-3.5">
+          <div class="bg-blue-600 text-white p-2.5 rounded-xl shrink-0">
+            <i data-lucide="award" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-blue-600 uppercase">最高受取利息（${selectedYears}年間・${taxLabel}）</div>
+            <div class="text-xl font-extrabold text-slate-900 mt-0.5">${formatYen(best.displayInterest)}</div>
+            <div class="text-xs text-slate-600 mt-1 font-medium">${best.institution} / ${best.name}（年${best.rate.toFixed(2)}%）</div>
+          </div>
+        </div>
 
-            // KPIカードの数値更新
-            document.getElementById('kpi-boj-rate').textContent = effectiveBojRate.toFixed(2);
-            document.getElementById('kpi-cpi-rate').textContent = state.macroInflation.toFixed(2);
-            document.getElementById('kpi-jgb10-yield').textContent = nominalJgb10Yield.toFixed(2);
+        <div class="bg-white rounded-2xl p-4 border border-emerald-200 shadow-xs flex items-start gap-3.5">
+          <div class="bg-emerald-600 text-white p-2.5 rounded-xl shrink-0">
+            <i data-lucide="trending-up" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-emerald-600 uppercase">選択リスト内の最大利息差</div>
+            <div class="text-xl font-extrabold text-slate-900 mt-0.5">+${formatYen(diff)}</div>
+            <div class="text-xs text-slate-600 mt-1">最上位（${best.rate.toFixed(2)}%）と最下位（${lowest.rate.toFixed(2)}%）の差額</div>
+          </div>
+        </div>
 
-            const realEl = document.getElementById('kpi-real-rate');
-            const realStatusEl = document.getElementById('kpi-real-status');
-            realEl.textContent = (actualRealRate >= 0 ? '+' : '') + actualRealRate.toFixed(2);
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-start gap-3.5">
+          <div class="bg-slate-800 text-white p-2.5 rounded-xl shrink-0">
+            <i data-lucide="wallet" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-slate-500 uppercase">最高パフォーマンス時の満期総額</div>
+            <div class="text-xl font-extrabold text-slate-900 mt-0.5">${formatYen(best.totalAmount)}</div>
+            <div class="text-xs text-slate-600 mt-1">元本 ${principalMan.toLocaleString()}万円 ＋ 利息</div>
+          </div>
+        </div>
+      `;
+    }
 
-            if (actualRealRate < 0) {
-                realEl.className = 'text-2xl sm:text-3xl font-bold text-rose-400 tracking-tight';
-                realStatusEl.textContent = '実質マイナス（目減り注意）';
-                realStatusEl.className = 'text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300';
-            } else {
-                realEl.className = 'text-2xl sm:text-3xl font-bold text-emerald-300 tracking-tight';
-                realStatusEl.textContent = '実質プラス圏';
-                realStatusEl.className = 'text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300';
-            }
+    function renderTable(computed) {
+      const tbody = document.getElementById('productTableBody');
+      if (computed.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 text-sm">該当する商品がありません</td></tr>`;
+        return;
+      }
 
-            // 高橋洋一式・優位性判定ステータスの更新
-            const verdictText = document.getElementById('macro-verdict-text');
-            const verdictBadge = document.getElementById('macro-verdict-badge');
+      const maxInterest = Math.max(...computed.map(c => c.displayInterest));
 
-            if (state.macroInflation >= 2.0 || state.macroHike > 0) {
-                verdictBadge.className = 'bg-emerald-950/90 border border-emerald-500/40 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold text-emerald-300 flex items-center gap-2 shrink-0';
-                verdictText.textContent = `インフレ・金利上昇トレンド（変動10年予測年利 ${var10Rate.toFixed(3)}%）：銀行定期より【個人向け国債・変動10年】が優位`;
-            } else if (state.macroInflation < 1.0 && state.macroHike <= 0) {
-                verdictBadge.className = 'bg-indigo-950/90 border border-indigo-400/40 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold text-indigo-200 flex items-center gap-2 shrink-0';
-                verdictText.textContent = `低インフレ・金利低下局面：金利をロックできる【個人向け国債・固定5年（2.170%）】の優位性が拡大`;
-            } else {
-                verdictBadge.className = 'bg-amber-950/90 border border-amber-400/40 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold text-amber-200 flex items-center gap-2 shrink-0';
-                verdictText.textContent = `中立〜緩やかなインフレ局面：元本保証の【個人向け国債（変動10年・固定5年）】が銀行定期を上回る水準`;
-            }
-        }
+      tbody.innerHTML = computed.map((item, idx) => {
+        const isTop = item.displayInterest === maxInterest && maxInterest > 0;
+        const badgeClass = getBadgeStyle(item.institution);
+        return `
+          <tr class="hover:bg-blue-50/40 transition ${isTop ? 'bg-blue-50/25' : ''}">
+            <td class="py-3.5 px-4">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded border ${badgeClass}">${item.institution}</span>
+                ${isTop ? '<span class="text-[10px] font-bold bg-amber-400 text-amber-950 px-1.5 py-0.5 rounded">TOP</span>' : ''}
+              </div>
+              <div class="font-bold text-slate-800">${item.name}</div>
+            </td>
+            <td class="py-3.5 px-3 text-right">
+              <div class="inline-flex items-center justify-end bg-slate-50 border border-slate-200 hover:border-blue-400 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-blue-500">
+                <input type="number" step="0.01" min="0" max="20" value="${item.rate.toFixed(2)}"
+                  onchange="updateRate('${item.id}', this.value)"
+                  aria-label="${item.name}の金利"
+                  class="w-16 text-right font-extrabold text-blue-700 bg-transparent focus:outline-none text-sm" />
+                <span class="text-xs font-bold text-slate-500 ml-0.5">%</span>
+              </div>
+            </td>
+            <td class="py-3.5 px-3 text-right font-bold ${isTop ? 'text-blue-700 text-base' : 'text-slate-800'}">
+              +${formatYen(item.displayInterest)}
+            </td>
+            <td class="py-3.5 px-4 text-right font-medium text-slate-700">
+              ${formatYen(item.totalAmount)}
+            </td>
+            <td class="py-3.5 px-3 text-center">
+              <span class="inline-block text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium mb-0.5">${item.badge}</span>
+              <div class="text-[11px] text-slate-400 max-w-[180px] mx-auto truncate" title="${item.note}">${item.note}</div>
+            </td>
+            <td class="py-3.5 px-2 text-center">
+              ${item.isCustom ? `
+                <button onclick="deleteProduct('${item.id}')" title="削除" class="text-slate-400 hover:text-rose-600 p-1 rounded cursor-pointer">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              ` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
 
-        function resetMacroScenario() {
-            state.macroInflation = BASE_MACRO.expectedInflation;
-            state.macroHike = 0.0;
-            document.getElementById('macro-inflation-slider').value = BASE_MACRO.expectedInflation;
-            document.getElementById('macro-inflation-val').textContent = `${BASE_MACRO.expectedInflation.toFixed(2)} %`;
-            document.getElementById('macro-hike-slider').value = 0.0;
-            document.getElementById('macro-hike-val').textContent = `+0.00 %`;
-            syncMacroToProducts();
-            updateAll();
-            showToast('マクロ経済シナリオを2026年11月標準値に戻しました', 'success');
-        }
-        ];
+    function renderChart(computed, principalMan) {
+      const ctx = document.getElementById('comparisonChart').getContext('2d');
+      const taxLabel = isAfterTax ? '税引後' : '税引前';
+      document.getElementById('chartSubTitle').textContent = `元本 ${principalMan.toLocaleString()}万円 / ${selectedYears}年間運用（${taxLabel}）`;
 
-        // アプリケーション状態
-        let state = {
-            principalMan: 300, // 万円
-            period: 5,         // 年 (1, 3, 5, 10)
-            showAfterTax: true,
-            products: JSON.parse(JSON.stringify(INITIAL_PRODUCTS))
-        };
+      const labels = computed.map(item => `${item.institution.replace('銀行', '')} ${item.name.replace('個人向け国債 ', '').replace('スーパー定期', '定期')}`);
+      const dataValues = computed.map(item => Math.round(item.displayInterest));
+      const bgColors = computed.map(item => item.color);
 
-        let interestChart = null;
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
 
-        // トースト通知表示関数（alertの代替）
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            const bgClass = type === 'success' ? 'bg-emerald-800 border-emerald-600' : 'bg-slate-800 border-slate-600';
-            toast.className = `${bgClass} text-white text-xs sm:text-sm font-medium px-4 py-3 rounded-xl shadow-lg border flex items-center gap-2 pointer-events-auto transition-all duration-300 translate-y-2 opacity-0`;
-            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle-2' : 'info'}" class="w-4 h-4 shrink-0 text-emerald-300"></i><span>${message}</span>`;
-            container.appendChild(toast);
-            lucide.createIcons();
-
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            });
-
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-2');
-                setTimeout(() => toast.remove(), 300);
-            }, 2800);
-        }
-
-        // 数値フォーマット関数
-        function formatYen(num) {
-            return Math.round(num).toLocaleString('ja-JP') + ' 円';
-        }
-
-        function formatSignedYen(num) {
-            const rounded = Math.round(num);
-            if (rounded === 0) return '±0 円（基準）';
-            return (rounded > 0 ? '+' : '') + rounded.toLocaleString('ja-JP') + ' 円';
-        }
-
-        // 計算ロジック
-        function calculateResults() {
-            const principalYen = state.principalMan * 10000;
-            const years = state.period;
-
-            const calculated = state.products.map(prod => {
-                const annualRate = Number(prod.rates[years]) || 0;
-                // 単利計算: 元本 * (年利 / 100) * 年数
-                const grossInterest = principalYen * (annualRate / 100) * years;
-                // 税額（円未満切り捨て）
-                const taxAmount = Math.floor(grossInterest * TAX_RATE);
-                const netInterest = grossInterest - taxAmount;
-
-                const activeInterest = state.showAfterTax ? netInterest : grossInterest;
-                const totalMaturity = principalYen + activeInterest;
-
-                return {
-                    ...prod,
-                    annualRate,
-                    grossInterest,
-                    netInterest,
-                    activeInterest,
-                    totalMaturity
-                };
-            });
-
-            // 最低利息の算出（差額計算用）
-            const minActiveInterest = calculated.length > 0
-                ? Math.min(...calculated.map(c => c.activeInterest))
-                : 0;
-            const maxActiveInterest = calculated.length > 0
-                ? Math.max(...calculated.map(c => c.activeInterest))
-                : 0;
-
-            return calculated.map(item => ({
-                ...item,
-                diffFromMin: item.activeInterest - minActiveInterest,
-                isTop: item.activeInterest === maxActiveInterest && maxActiveInterest > 0
-            }));
-        }
-
-        // カテゴリバッジのスタイル取得
-        function getCategoryBadgeHtml(category, badgeText) {
-            const styles = {
-                jgb: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-                mega: 'bg-rose-50 text-rose-700 border-rose-200',
-                regional: 'bg-sky-50 text-sky-700 border-sky-200',
-                custom: 'bg-emerald-50 text-emerald-700 border-emerald-200'
-            };
-            const cls = styles[category] || styles.custom;
-            return `<span class="inline-block text-[11px] font-bold px-2 py-0.5 rounded-md border ${cls}">${badgeText}</span>`;
-        }
-
-        // サマリーカードの描画
-        function renderSummaryCards(results) {
-            const container = document.getElementById('summary-cards');
-            if (results.length === 0) {
-                container.innerHTML = '';
-                return;
-            }
-
-            const sorted = [...results].sort((a, b) => b.activeInterest - a.activeInterest);
-            const best = sorted[0];
-            const worst = sorted[sorted.length - 1];
-            const maxDiff = best.activeInterest - worst.activeInterest;
-            const taxLabel = state.showAfterTax ? '税引後・手取り' : '税引前';
-
-            container.innerHTML = `
-                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex items-start justify-between">
-                    <div>
-                        <p class="text-xs font-bold text-slate-500 flex items-center gap-1">
-                            <i data-lucide="trophy" class="w-3.5 h-3.5 text-amber-500"></i>
-                            最高受取利息（${state.period}年累計・${taxLabel}）
-                        </p>
-                        <p class="text-xl sm:text-2xl font-bold text-brand-700 mt-1">${formatYen(best.activeInterest)}</p>
-                        <p class="text-xs text-slate-600 mt-1 font-medium">${best.bank} ${best.name}（年利 ${best.annualRate.toFixed(3)}%）</p>
-                    </div>
-                    <div class="p-2.5 bg-brand-50 text-brand-600 rounded-xl">
-                        <i data-lucide="trending-up" class="w-5 h-5"></i>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex items-start justify-between">
-                    <div>
-                        <p class="text-xs font-bold text-slate-500 flex items-center gap-1">
-                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-emerald-600"></i>
-                            商品選択による利息差（最大 vs 最小）
-                        </p>
-                        <p class="text-xl sm:text-2xl font-bold text-emerald-600 mt-1">+${formatYen(maxDiff)}</p>
-                        <p class="text-xs text-slate-600 mt-1">最低水準（${worst.bank} ${worst.annualRate.toFixed(3)}%）との比較</p>
-                    </div>
-                    <div class="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
-                        <i data-lucide="scale" class="w-5 h-5"></i>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex items-start justify-between">
-                    <div>
-                        <p class="text-xs font-bold text-slate-500 flex items-center gap-1">
-                            <i data-lucide="coins" class="w-3.5 h-3.5 text-slate-600"></i>
-                            トップ商品の満期時受取総額
-                        </p>
-                        <p class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">${formatYen(best.totalMaturity)}</p>
-                        <p class="text-xs text-slate-600 mt-1">元本 ${state.principalMan.toLocaleString()}万円 ＋ ${taxLabel}利息</p>
-                    </div>
-                    <div class="p-2.5 bg-slate-100 text-slate-700 rounded-xl">
-                        <i data-lucide="piggy-bank" class="w-5 h-5"></i>
-                    </div>
-                </div>
-            `;
-        }
-
-        // 比較テーブルの描画
-        function renderTable(results) {
-            const tbody = document.getElementById('comparison-tbody');
-            tbody.innerHTML = results.map(item => {
-                const rowHighlight = item.isTop ? 'bg-brand-50/40' : 'hover:bg-slate-50/80';
-                const periodMismatchHint = (item.nativePeriod && item.nativePeriod !== state.period)
-                    ? `<span class="text-[11px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded ml-1" title="本来の満期と選択期間が異なります">※${item.nativePeriod}年債換算</span>`
-                    : '';
-
-                const deleteBtn = item.category === 'custom'
-                    ? `<button onclick="deleteProduct('${item.id}')" class="ml-1.5 text-slate-400 hover:text-rose-600 transition" title="この商品を削除"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i></button>`
-                    : '';
-
-                return `
-                    <tr class="${rowHighlight} transition">
-                        <td class="py-3.5 px-4">
-                            <div class="flex items-center gap-1.5 flex-wrap mb-0.5">
-                                ${getCategoryBadgeHtml(item.category, item.badge)}
-                                ${item.isTop ? '<span class="inline-flex items-center gap-0.5 text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800"><i data-lucide="crown" class="w-3 h-3"></i>最高水準</span>' : ''}
-                                ${periodMismatchHint}
-                                ${deleteBtn}
-                            </div>
-                            <div class="font-bold text-slate-900 text-sm">${item.bank}</div>
-                            <div class="text-xs text-slate-500">${item.name}</div>
-                        </td>
-                        <td class="py-3.5 px-3 text-right whitespace-nowrap">
-                            <div class="inline-flex items-center bg-white border border-slate-300 hover:border-brand-500 focus-within:border-brand-600 focus-within:ring-2 focus-within:ring-brand-500/20 rounded-lg px-2 py-1 transition">
-                                <input type="number" step="0.001" min="0" max="30"
-                                    value="${item.annualRate.toFixed(3)}"
-                                    onchange="updateProductRate('${item.id}', this.value)"
-                                    aria-label="${item.bank} ${item.name}の適用金利"
-                                    class="w-16 text-right font-bold text-slate-900 text-sm bg-transparent focus:outline-none">
-                                <span class="text-xs font-bold text-slate-500 ml-0.5">%</span>
-                            </div>
-                        </td>
-                        <td class="py-3.5 px-3 text-right whitespace-nowrap font-medium ${!state.showAfterTax ? 'text-brand-700 font-bold' : 'text-slate-600'}">
-                            ${formatYen(item.grossInterest)}
-                        </td>
-                        <td class="py-3.5 px-3 text-right whitespace-nowrap font-medium ${state.showAfterTax ? 'text-brand-700 font-bold' : 'text-slate-600'}">
-                            ${formatYen(item.netInterest)}
-                        </td>
-                        <td class="py-3.5 px-3 text-right whitespace-nowrap font-bold text-slate-900">
-                            ${formatYen(item.totalMaturity)}
-                        </td>
-                        <td class="py-3.5 px-4 text-right whitespace-nowrap">
-                            <span class="text-xs font-bold px-2 py-1 rounded-md ${item.diffFromMin > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}">
-                                ${formatSignedYen(item.diffFromMin)}
-                            </span>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        // チャートの描画・更新
-        function renderChart(results) {
-            const ctx = document.getElementById('interestChart').getContext('2d');
-            const taxLabel = state.showAfterTax ? '税引後・手取り' : '税引前';
-
-            document.getElementById('chart-title').textContent = `受取利息の比較（${taxLabel}）`;
-            document.getElementById('chart-subtitle').textContent = `元本 ${state.principalMan.toLocaleString()}万円 ／ 運用期間 ${state.period}年間 の累計利息`;
-
-            const labels = results.map(r => `${r.bank}\n${r.name.replace('（2026年11月募集）', '')}`);
-            const dataValues = results.map(r => Math.round(r.activeInterest));
-
-            const backgroundColors = results.map(r => {
-                if (r.category === 'jgb') return 'rgba(79, 70, 229, 0.85)';      // インディゴ（国債）
-                if (r.category === 'mega') return 'rgba(225, 29, 72, 0.82)';     // ローズ（メガバンク）
-                if (r.category === 'regional') return 'rgba(2, 132, 199, 0.85)'; // スカイブルー（地銀）
-                return 'rgba(16, 185, 129, 0.85)';                               // エメラルド（カスタム）
-            });
-
-            if (interestChart) {
-                interestChart.data.labels = labels;
-                interestChart.data.datasets[0].label = `${taxLabel}利息（円）`;
-                interestChart.data.datasets[0].data = dataValues;
-                interestChart.data.datasets[0].backgroundColor = backgroundColors;
-                interestChart.update();
-                return;
-            }
-
-            interestChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: `${taxLabel}利息（円）`,
-                        data: dataValues,
-                        backgroundColor: backgroundColors,
-                        borderRadius: 6,
-                        barPercentage: 0.65
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                            padding: 12,
-                            titleFont: { family: '"Noto Sans JP", sans-serif', size: 12 },
-                            bodyFont: { family: '"Inter", "Noto Sans JP", sans-serif', size: 13, weight: 'bold' },
-                            callbacks: {
-                                label: function(context) {
-                                    const item = results[context.dataIndex];
-                                    return ` ${context.parsed.x.toLocaleString()} 円（年利 ${item.annualRate.toFixed(3)}%）`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            grid: { color: '#f1f5f9' },
-                            ticks: {
-                                font: { family: '"Inter", sans-serif', size: 11 },
-                                color: '#64748b',
-                                callback: function(value) {
-                                    return value.toLocaleString() + '円';
-                                }
-                            }
-                        },
-                        y: {
-                            grid: { display: false },
-                            ticks: {
-                                font: { family: '"Noto Sans JP", sans-serif', size: 11, weight: '600' },
-                                color: '#334155'
-                            }
-                        }
-                    }
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: `受取利息（${taxLabel}・円）`,
+            data: dataValues,
+            backgroundColor: bgColors,
+            borderRadius: 6,
+            barPercentage: 0.65
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ' 受取利息: ' + context.parsed.x.toLocaleString('ja-JP') + ' 円';
                 }
-            });
-        }
-
-        // 全体再描画
-        function updateAll() {
-            const principalYen = state.principalMan * 10000;
-            document.getElementById('principal-formatted').textContent = `${principalYen.toLocaleString('ja-JP')} 円`;
-
-            const results = calculateResults();
-            renderSummaryCards(results);
-            renderTable(results);
-            renderChart(results);
-            lucide.createIcons();
-        }
-
-        // コントロールイベントハンドラ
-        function setPrincipal(manValue) {
-            const clamped = Math.max(1, Math.min(100000, Number(manValue) || 100));
-            state.principalMan = clamped;
-            document.getElementById('principal-input').value = clamped;
-            document.getElementById('principal-slider').value = Math.min(5000, Math.max(100, clamped));
-            updateAll();
-        }
-
-        function setPeriod(years) {
-            state.period = years;
-            document.querySelectorAll('.period-btn').forEach(btn => {
-                if (Number(btn.dataset.period) === years) {
-                    btn.classList.add('tab-active');
-                    btn.classList.remove('text-slate-600', 'hover:text-slate-900');
-                } else {
-                    btn.classList.remove('tab-active');
-                    btn.classList.add('text-slate-600', 'hover:text-slate-900');
+              }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                font: { size: 11 },
+                callback: function(value) {
+                  if (value >= 10000) return (value / 10000) + '万円';
+                  return value.toLocaleString() + '円';
                 }
-            });
-            updateAll();
-        }
-
-        function setTaxMode(afterTax) {
-            state.showAfterTax = afterTax;
-            const afterBtn = document.getElementById('tax-after-btn');
-            const beforeBtn = document.getElementById('tax-before-btn');
-            if (afterTax) {
-                afterBtn.classList.add('tab-active');
-                afterBtn.classList.remove('text-slate-600');
-                beforeBtn.classList.remove('tab-active');
-                beforeBtn.classList.add('text-slate-600');
-            } else {
-                beforeBtn.classList.add('tab-active');
-                beforeBtn.classList.remove('text-slate-600');
-                afterBtn.classList.remove('tab-active');
-                afterBtn.classList.add('text-slate-600');
+              }
+            },
+            y: {
+              grid: { display: false },
+              ticks: {
+                font: { size: 11, weight: '600' },
+                color: '#334155'
+              }
             }
-            updateAll();
+          }
         }
+      });
+    }
 
-        // テーブル内の金利直接編集
-        function updateProductRate(productId, newRateStr) {
-            const parsed = parseFloat(newRateStr);
-            if (isNaN(parsed) || parsed < 0) {
-                showToast('有効な金利（0%以上）を入力してください');
-                updateAll();
-                return;
-            }
-            const target = state.products.find(p => p.id === productId);
-            if (target) {
-                target.rates[state.period] = parsed;
-                updateAll();
-                showToast(`${target.bank}（${state.period}年）の金利を ${parsed.toFixed(3)}% に更新しました`, 'success');
-            }
-        }
-
-        // カスタム商品の削除
-        function deleteProduct(productId) {
-            state.products = state.products.filter(p => p.id !== productId);
-            updateAll();
-            showToast('追加商品をリストから削除しました');
-        }
-
-        // 初期データへのリセット
-        function resetDefaults() {
-            state.products = JSON.parse(JSON.stringify(INITIAL_PRODUCTS));
-            state.macroInflation = BASE_MACRO.expectedInflation;
-            state.macroHike = 0.0;
-            document.getElementById('macro-inflation-slider').value = BASE_MACRO.expectedInflation;
-            document.getElementById('macro-inflation-val').textContent = `${BASE_MACRO.expectedInflation.toFixed(2)} %`;
-            document.getElementById('macro-hike-slider').value = 0.0;
-            document.getElementById('macro-hike-val').textContent = `+0.00 %`;
-            syncMacroToProducts();
-            setPrincipal(300);
-            setPeriod(5);
-            setTaxMode(true);
-            showToast('2026年11月基準の初期データにリセットしました', 'success');
-        }
-
-        // モーダル制御
-        function openAddModal() {
-            const modal = document.getElementById('add-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.getElementById('new-bank').focus();
-        }
-
-        function closeAddModal() {
-            const modal = document.getElementById('add-modal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.getElementById('add-product-form').reset();
-        }
-
-        function handleAddProduct(e) {
-            e.preventDefault();
-            const bank = document.getElementById('new-bank').value.trim();
-            const name = document.getElementById('new-name').value.trim();
-            const category = document.getElementById('new-category').value;
-            const rate = parseFloat(document.getElementById('new-rate').value);
-
-            if (!bank || !name || isNaN(rate)) return;
-
-            const badgeMap = {
-                custom: '追加・特別金利',
-                regional: '地方銀行',
-                mega: 'メガ・ネット',
-                jgb: '国債・債券'
-            };
-
-            const newProd = {
-                id: 'custom-' + Date.now(),
-                bank,
-                name,
-                category,
-                badge: badgeMap[category] || '追加商品',
-                nativePeriod: null,
-                rates: { 1: rate, 3: rate, 5: rate, 10: rate },
-                note: 'ユーザー追加商品'
-            };
-
-            state.products.push(newProd);
-            closeAddModal();
-            updateAll();
-            showToast(`「${bank} ${name}」を比較表に追加しました`, 'success');
-        }
-
-        // 初期化イベントリスナー設定
-        window.addEventListener('DOMContentLoaded', () => {
-            const principalInput = document.getElementById('principal-input');
-            const principalSlider = document.getElementById('principal-slider');
-            const macroInflationSlider = document.getElementById('macro-inflation-slider');
-            const macroHikeSlider = document.getElementById('macro-hike-slider');
-
-            macroInflationSlider.addEventListener('input', (e) => {
-                const val = parseFloat(e.target.value);
-                state.macroInflation = val;
-                document.getElementById('macro-inflation-val').textContent = `${val.toFixed(2)} %`;
-                syncMacroToProducts();
-                updateAll();
-            });
-
-            macroHikeSlider.addEventListener('input', (e) => {
-                const val = parseFloat(e.target.value);
-                state.macroHike = val;
-                document.getElementById('macro-hike-val').textContent = `${val >= 0 ? '+' : ''}${val.toFixed(2)} %`;
-                syncMacroToProducts();
-                updateAll();
-            });
-
-            principalInput.addEventListener('input', (e) => {
-                const val = parseFloat(e.target.value);
-                if (!isNaN(val) && val > 0) {
-                    state.principalMan = val;
-                    principalSlider.value = Math.min(5000, Math.max(100, val));
-                    updateAll();
-                }
-            });
-
-            principalSlider.addEventListener('input', (e) => {
-                const val = parseFloat(e.target.value);
-                state.principalMan = val;
-                principalInput.value = val;
-                updateAll();
-            });
-
-            // モーダル外クリックで閉じる
-            document.getElementById('add-modal').addEventListener('click', (e) => {
-                if (e.target.id === 'add-modal') closeAddModal();
-            });
-
-            syncMacroToProducts();
-            updateAll();
-        });
-    </script>
+    // 初期描画（マクロ指標連動計算を実行してから全体を描画）
+    window.addEventListener('DOMContentLoaded', () => {
+      updateMacroSimulation();
+    });
+  </script>
 </body>
 </html>
